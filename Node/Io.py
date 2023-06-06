@@ -52,12 +52,14 @@ class Out():
                 self.write("None")
             elif isinstance(e, str):
                 self.write(e)
+            elif isinstance(e, bytes):
+                self.write(str(e))
             elif isinstance(e, int):
                 self.write(str(e))
             elif isinstance(e, float):
                 self.write(str(e))
             elif isinstance(e, (list, tuple)):
-                self.write(e)
+                self.write(str(e))
             elif isinstance(e, dict):
                 self.write(str(e))
             elif isinstance(e, bool):
@@ -78,6 +80,7 @@ class Out():
             else:
                 self.write(str(e))
             self._Break=True
+            
         return self
         
     def __call__(self, *args, **opts):
@@ -91,8 +94,10 @@ class Out():
             return self.nl()      
         return self   
         
-    def _(self):
-        
+    def _(self, e, v):
+        if isinstance(e, (list, tuple)):
+            "_".join(e)
+        self(e, "=", v)
         return self
         
     def __add__(self, v):
@@ -134,6 +139,7 @@ STDOUT = Out(sys.stdout)
 
 STDERR = Out(sys.stderr)
 
+ERROR = Out(sys.stderr, prefix="Error")
 DEBUG = Out(sys.stderr, prefix="Debug")
 WARNIG = Out(sys.stderr, prefix="Warning")
 INFO = Out(sys.stderr, prefix="Info")
@@ -151,6 +157,7 @@ if __name__ =="__main__":
     STDERR("Error", Io, Out, Out.write)
     
     DEBUG.Enable()("code", 1)
-    DEBUG << "XXX"
+    DEBUG << "XXX" >> ""
+    DEBUG._("a", 9)
 
 ###
