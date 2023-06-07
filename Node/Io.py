@@ -85,21 +85,35 @@ class Out():
         
     def __call__(self, *args, **opts):
         if self._Enable:
-            ff=False
-            for e in args:
-                if ff:
-                    self._Fd.write(" ")
-                self.writeout(e)
-                ff=True
+            if len(args)>0:
+                if self._Break:
+                    self.write(' ')
+                ff=False
+                for e in args:
+                    if ff:
+                        self._Fd.write(' ')
+                    self.writeout(e)
+                    ff=True
             return self.nl()      
         return self   
         
     def _(self, e, v):
-        if isinstance(e, (list, tuple)):
-            "_".join(e)
-        self(e, "=", v)
+        if self._Enable:
+            if isinstance(e, (list, tuple)):
+                "_".join(e)
+            self(e, "=", v)
         return self
         
+        
+    def __getattr__(self, i):
+        if i.isupper():
+            if self._Enable:
+                if self._Break:
+                    self.write(' ')
+                self.writeout(i.capitalize())            
+                return self
+        return ValueError()
+    
     def __add__(self, v):
         return self.writeout(v)
     
@@ -139,12 +153,13 @@ STDOUT = Out(sys.stdout)
 
 STDERR = Out(sys.stderr)
 
-ERROR = Out(sys.stderr, prefix="Error")
-DEBUG = Out(sys.stderr, prefix="Debug")
-WARNIG = Out(sys.stderr, prefix="Warning")
-INFO = Out(sys.stderr, prefix="Info")
-FAIL = Out(sys.stderr, prefix="Fail")
-CRITICAL = Out(sys.stderr, prefix="Critical")
+ERROR = Out(sys.stderr, prefix=sys.intern("Error"))
+DEBUG = Out(sys.stderr, prefix=sys.intern("Debug"))
+WARNIG = Out(sys.stderr, prefix=sys.intern("Warning"))
+INFO = Out(sys.stderr, prefix=sys.intern("Info"))
+FAIL = Out(sys.stderr, prefix=sys.intern("Fail"))
+CRITICAL = Out(sys.stderr, prefix=sys.intern("Critical"))
+
 
 class Io():
     
@@ -154,10 +169,11 @@ class Io():
     
 if __name__ =="__main__":
     
-    STDERR("Error", Io, Out, Out.write)
+    ERROR(Io, Out, Out.write)
     
     DEBUG.Enable()("code", 1)
     DEBUG << "XXX" >> ""
     DEBUG._("a", 9)
+    FAIL.TEST.BASE("%%")("123")._("v","alue")
 
 ###

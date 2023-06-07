@@ -18,7 +18,42 @@ if ipth not in sys.path:
 
 from Node import Words as _w
 
+class Macro(str):
+    
+    def __call__(self, **args):
+        if getattr(self, "_Arfument", None) is None:
+          self._Arguments=dict()
+        self._Arguments.update(args)
+        for e, v in args.items():
+            e=e.capitalize()
+            self._Arguments[e]=v
+        return self
+        
+    def __str__(self):
+        print(bytes(self, "utf-8"))
+        if getattr(self, "_Arguments", None) is not None:
+            s=self.split("${{")
+            if len(s)>1:
+                r=list()
+                for e in s:
+                    if "}}" in e:
+                        e=e.split("}}",2)
+                        a=e[0].strip().capitalize()
+                        va=self._Arguments[a]
+                        vv=va+e[1]
+                        r.append(vv)
+                    else:
+                        r.append(e)
+                print("r=", r)
+                return "".join(r)
+        return self
+    
+    pass
+
+
 class Types():
+    
+    Macro = Macro
     
     class Dict(dict):
                 
@@ -79,5 +114,9 @@ if __name__ =="__main__":
     d.EEEE = 3
     print("d=", d)
     print(d.EEEE)
+    
+    ss = Macro("esse e uma ${{V1}} macro")
+    ss(v1="xxxxccxxx")
+    print(ss)
   
 ###
