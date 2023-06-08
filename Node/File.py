@@ -21,10 +21,36 @@ from Node.Types import Types
 
 class _File():
     
-    def __init__(self, path, pwd=None):
+    @staticmethod 
+    def asPath(p, pwd=None, suffix=None):
         if pwd is not None:
-            path=os.path.dirname(pwd)+"/"+path
-        self.Path = path
+            pwd=Path(pwd)
+            if not pwd.is_dir():
+                pwd=pwd.parent
+                
+        if isinstance(p, Path):
+            pass
+        elif isinstance(p, str):
+            p=Path(p)
+        elif isinstance(p, (list, tuple)):
+            rr=None
+            for e in p: 
+                if rr is None:
+                    rr=Path(e)
+                else:
+                    rr /= e
+            p=rr
+        else:
+            ValueError()
+        if pwd is not None:
+            p = pwd / p
+        if p.suffix in (None, "") and suffix is not None:
+            p = p.with_suffix(suffix)
+        return p
+    
+    
+    def __init__(self, path, pwd=None, suffix=None):
+        self.Path = File.asPath(path, pwd=pwd, suffix=suffix)
         self.Fd = None
         self.open()
         return    
@@ -55,8 +81,8 @@ class _File():
 class _Input(_File):
    
    
-    def __init__(self, path, pwd=None):
-        super().__init__(path, pwd)
+    def __init__(self, path, pwd=None, suffix=None):
+        super().__init__(path, pwd=pwd, suffix=suffix)
         return
                 
     def open(self):
@@ -78,8 +104,8 @@ class _Input(_File):
 class Bin(_Input):
         
     @staticmethod 
-    def Load(path, pwd=None): 
-        fi=Input.Bin(path, pwd=pwd)
+    def Load(path, pwd=None, suffix=None): 
+        fi=Input.Bin(path, pwd=pwd, suffix=suffix)
         s=fi.read()
         fi.close()
         return s
@@ -94,39 +120,53 @@ class Bin(_Input):
        
     pass
     
+class YAML(_Input):
+        
+    @classmethod 
+    def Load(cls, path, pwd=None, suffix=None):
+        r=Types.Dict()            
+        fi=Input.YAML(path, pwd=pwd, suffix=suffix)
+        s=fi.read()
+        fi.close()
+        r.update(s)
+        return r
+        
+    def __init__(self, path, pwd=None, suffix=None):
+        super().__init__(path, pwd=pwd, suffix=".yaml")
+        return
+            
+    def read(self):
+        r = None
+        if self.Fd is not None:
+            r= yaml.load(self.Fd, Loader=yaml.SafeLoader)
+        return r
+               
+    pass
+    
+    
+class Macro(_Input):
+    
+    @classmethod 
+    def Load(cls, path, pwd=None, suffix=None):       
+        fi=Input(path, pwd=pwd, suffix=suffix)
+        s=fi.read()
+        fi.close()
+        return s   
+    
+    pass
+    
 class Input(_Input):
     
-    class YAML(_Input):
-        
-        class Load(Types.Dict):
-            
-            def __init__(self, path, pwd=None): 
-                fi=Input.YAML(path, pwd=pwd)
-                s=fi.read()
-                fi.close()
-                self.update(s)
-                return
-            
-            pass
-        
-        def __init__(self, path, pwd=None):
-            super().__init__(path+".yaml", pwd)
-            return
-            
-        def read(self):
-            r = None
-            if self.Fd is not None:
-                r= yaml.load(self.Fd, Loader=yaml.SafeLoader)
-            return r
-               
-        pass
-
-    Bin = Bin          
+    
+    Yaml = YAML
+    YAML = YAML
+    Bin = Bin      
+    Macro = Macro    
            
     @classmethod 
-    def Load(self, path, pwd=None):
+    def Load(self, path, pwd=None, suffix=None):
         #print("Load File", path)
-        with Input(path, pwd) as ff:
+        with Input(path, pwd=pwd, suffix=suffix) as ff:
             r=ff.read()
         return r
         
@@ -134,12 +174,12 @@ class Input(_Input):
 
 class _Output(_File):
     
-    def __init__(self, path, pwd=None, makedir=False, append=False):
-        super().__init__(path, pwd)
+    def __init__(self, path, pwd=None, suffix=None, makedir=False, append=False):
+        super().__init__(path, pwd=pwd, suffix=suffix)
        # self.Path = path
        # self.Fd = None
         if makedir is True:
-            os.makedirs(os.path.dirname(sekf.Path), exits_ok=true)
+            self.Path.makedirs(exits_ok=true)
         if append:
             self.append()
         else:
@@ -194,7 +234,7 @@ class Output(_Output):
 
     
     @classmethod 
-    def Save(cls, path, pwd=None):
+    def Save(cls, path, pwd=None, suffix=None):
         return
     	
     pass
@@ -211,12 +251,13 @@ class File(_File):
     
 if __name__ =="__main__":
     
-    s = Input.Load("Node.css", pwd=__file__)
+    s = Input.Load("Styles/Node.css", pwd=__file__)
     print(s)
     
-    b = Input.Bin.Load("Images/Icons/Docker.png", pwd=__file__)
+    b = Input.Bin.Load("Images/Icons/Docker", suffix=".png", pwd=__file__)
     print(b)
-    
+    b = Input.Bin.Load(("Images","Icons","Docker.png"), pwd=__file__)
+    print(b)
     pass
   
 ###
