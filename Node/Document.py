@@ -120,10 +120,11 @@ class Document(Types.Dict):
         r={ '_id': self._Id }
         r.update(self)
         return r
+            
         
     def __getattr__(self, n):
         print("---getattr", n, self.__dict__)
-        if n==n.upper():
+        if n.isupper():
            n=sys.intern(n.capitalize())
            return self.get(n, None)
         else:
@@ -135,7 +136,7 @@ class Document(Types.Dict):
         
     def __setattr__(self, n, v):
         print("--- setattr", n, v, self.__dict__ )
-        if n==n.upper():
+        if n.isupper():
             n= sys.intern(n.capitalize())
             self[n]= v  
         else:
@@ -157,6 +158,7 @@ if __name__ =="__main__":
     print(r.Contents)
     e=r.copy()
     print("XOP=", e.XOP)
-    e.DUP="dddd"
+    e.DUP={ "a": "dddd"}
     print(r, e)
+    print(e["Dup"])
 ###

@@ -53,16 +53,25 @@ Group = _i("Group")
 Groups = _i("Groups")
 Organization = _i("Organization")
 Organizations = _i("Organizations")
+Defaukt = _i("Default")
+Error = _i("Error")
 _True = _i("True")
 _False = _i("False")
 Test = _i("Test")
 Start = _i("Start")
 End = _i("End")
+Description = _i("Description")
+Javascript = _i("Javascript")
+Java = _i("Java")
+Python = _i("Python")
 
-thunder = _i("thunder")
-stroke = _i("stroke")
+Thunder = _i("Thunder")
+Stroke = _i("Stroke")
+_thunder = _i("thunder")
+_stroke = _i("stroke")
 
 _http = _i("http")
+_html = _i("html")
 _socket = _i("socket")
 _module = _i("module")
 _threads = _i("threads")
@@ -81,6 +90,8 @@ _info = _i("info")
 _verbosity = _i("verbosity")
 
 _thunderstroke = _i("thunderstroke")
+
+UTF_8 = _i("UTF-8")
 
     #pass
 ###
