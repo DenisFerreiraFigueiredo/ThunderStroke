@@ -4,6 +4,7 @@
 
 import sys
 import os
+
 from pathlib import Path
 
 ipth = Path(__file__).parent.parent
@@ -13,11 +14,13 @@ if ipth not in sys.path:
     sys.path.insert(0, ipth)
 
 from Node import Words as _w
+
+from Node.Arrange import Arrange
 from Node.FlatModel import FlatModel
 
-#from Node import Node
 
-class serviceConfig():
+
+class serviceConfig(Arrange):
         
     def __init__(self, parent, path):
         self._Parent=parent
@@ -77,19 +80,30 @@ class Service(FlatModel):
         
     @property 
     def Partition(self):
-        return self._Partitin
+        return self._Partition
         
     @property 
     def configSufix(self):
         return ".conf"
+        
+    @property 
+    def socketSuffix(self):
+        return ".socket"
                       
     def configPath(self, *args):
         return Node.tempPath(self.__class__.__name, *args)
                 
     @property 
     def configFilePath(self):
-        p=self.configPath / (self.Partition+self.configSufix)
-        return p
+        return self.configPath() / (self.Partition+self.configSufix)
+        
+    def socketPath(self, *args):
+        return Node.runPath(self.__class__.__name, *args)
+       
+    @property 
+    def socketFilePath(self):
+        return self.socketPath() / (self.Partition+self.socketSufix)
+        
         
     configFileClass = serviceConfig
            
