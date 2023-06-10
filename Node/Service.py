@@ -20,7 +20,7 @@ from Node.FlatModel import FlatModel
 
 
 
-class serviceConfig(Arrange):
+class serviceConfig():
         
     def __init__(self, parent, path):
         self._Parent=parent
@@ -70,7 +70,7 @@ class serviceConfig(Arrange):
             
     pass
 
-class Service(FlatModel):
+class Service(FlatModel, Arrange):
     
     def __init__(self, partition=_w.Default):
         self._Partition=partition
@@ -91,18 +91,18 @@ class Service(FlatModel):
         return ".socket"
                       
     def configPath(self, *args):
-        return Node.tempPath(self.__class__.__name, *args)
+        return self.tempPath(self.Partition, *args)
                 
     @property 
     def configFilePath(self):
-        return self.configPath() / (self.Partition+self.configSufix)
+        return (self.configPath() / self.Partition).with_suffix(self.configSuffix)
         
     def socketPath(self, *args):
-        return Node.runPath(self.__class__.__name, *args)
+        return self.runPath(self.Partition, *args)
        
     @property 
     def socketFilePath(self):
-        return self.socketPath() / (self.Partition+self.socketSufix)
+        return (self.socketPath() / self.Partition).with_suffix(self.socketSuffix)
         
         
     configFileClass = serviceConfig

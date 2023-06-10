@@ -43,7 +43,7 @@ class Arrange(): ## Interface of
         
     @classmethod
     def runPath(cls, *args, mkdir=False):
-        return cls.asPath(("var" / "run"), *args, mkdir=mkdir)
+        return cls.asPath(("var", "run"), *args, mkdir=mkdir)
         	      
     @classmethod 
     def workPath(cls, *args, mkdir=False):
