@@ -18,10 +18,19 @@ if ipth not in sys.path:
 
 from Node import Words as _w
 
+_w._Arguments = _w._i("_Arguments")
+
+
 class Macro(str):
     
+    def isEmpty(self):
+        return not bool(self)
+        
+    def nitIsEmpty(self):
+        return bool(self)
+    
     def __call__(self, **args):
-        if getattr(self, "_Arfument", None) is None:
+        if getattr(self, _w._Arguments, None) is None:
           self._Arguments=dict()
         self._Arguments.update(args)
         for e, v in args.items():
@@ -30,8 +39,8 @@ class Macro(str):
         return self
         
     def __str__(self):
-        print(bytes(self, "utf-8"))
-        if getattr(self, "_Arguments", None) is not None:
+        print(bytes(self, _w.UTF_8))
+        if getattr(self, _w._Arguments, None) is not None:
             s=self.split("${{")
             if len(s)>1:
                 r=list()
@@ -50,7 +59,32 @@ class Macro(str):
     
     pass
     
+class _Iterator():    
+
+    def __iter__(self):
+        r=super().__iter__()
+        print("iterator iter", r)
+        return r
+           
+    def __next__(self):
+        r=super().__next__()
+        print("iterator next", r)
+        if type(r) == dict:
+            r=Dict.From(r)
+        elif type(r) == list:
+            r=List.From(r)
+        return r
+        raise StopIteration
+    
+    pass
+    
 class List(list):
+    
+    def isEmpty(self):
+        return not bool(self)    
+        
+    def notIsEmpty(self):
+        return bool(self)         
     
     def fromYaml(self, y):
         ss = yaml.load(y, Loader=yaml.FullLoader)
@@ -68,7 +102,9 @@ class List(list):
     
     def isEmpty(self):
         return len(self)==0
-    
+        
+  
+                    
     pass
 
 class Dict(dict):
@@ -77,9 +113,15 @@ class Dict(dict):
     def From(s):
         if isinstance(s, Dict):
             return s
-        elif isinstance(s, dict):
+        elif type(s)==dict:
             return Dict(s)
         return None
+        
+    def isEmpty(self):
+        return not bool(self)
+        
+    def notIsEmpty(self):
+        return not bool(self)  
                 
     def fromYaml(self, y):
         ss = yaml.load(y, Loader=yaml.FullLoader)
@@ -156,6 +198,8 @@ class Types():
     
     Macro = Macro
     Dict = Dict
+    List = List
+    
     
          
     pass
@@ -174,4 +218,18 @@ if __name__ =="__main__":
     ss(v1="xxxxccxxx")
     print(ss)
   
+  
+    if isinstance(d, dict):
+        print("--- d is dict", type(d))
+
+    if not bool({ "a": 3}):
+        print("--- is empty")        
+        
+    l=List([1, 2, 3, [0, 7]])
+    print(l, type(l), iter(l))
+    for e in l:
+        print(e, type(e))
+   
+     
+   
 ###

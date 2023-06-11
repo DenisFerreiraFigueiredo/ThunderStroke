@@ -28,6 +28,7 @@ from Node import Words as _w
 from Node.Io import DEBUG
 from Node.Mime import Mime
 from Node.Types import Types
+from Node.Html import Html
  
 _w.Forbidden = _w._i("Forbidden")
 _w.Localhost = _w._i("Localhost")
@@ -201,18 +202,23 @@ class Error(_Error):
     
 
 
-class PathInfo(list):
+class PathInfo(Types.List):
     
     def __init__(self, s=None):
         super().__init__()
         if s is not None:
             if isinstance(s, str):
-                s=s.lstrip()
+                DEBUG.PATHINFO.S(s)
+                s=s.lstrip()               
                 s=os.path.normpath(s)
-                s=s.replace("\\", "/")                    
+                s=s.replace("\\", "/")   
+                if s[0]=="/":
+                    s=s[1:]      
+                DEBUG.PATHINFO.S(s)           
                 s=s.split("/")
-                if len(s)>0 and s[0]=="":
-                    s.pop(0)
+                while len(s)>0 and s[0]=="":
+                    s=s.pop(0)
+                DEBUG.PATHINFO.S(s)
             self.extend(s)
         return
         
@@ -514,7 +520,7 @@ class Wsgi(dict):
         return self._Name
     
     def Get(self, env):        
-        return "Get response"
+        return None
         
     def Put(self, env):
         return
@@ -570,10 +576,10 @@ class Wsgi(dict):
         return None
         
     def do(self, req):
-        DEBUG(self.__class__.__name__, "-->")
+        DEBUG.DO(self.__class__.__name__, "-->")
       
         pp=req.PathInfo()
-        if len(pp)>0:
+        if pp.notIsEmpty():
             DEBUG.PATH(pp)
             pp=pp.First().capitalize()
             DEBUG.PATH(pp)             
@@ -604,62 +610,71 @@ class Wsgi(dict):
         return resp
              
     def handler(self, env, begin_response):
-        stm= int(time.perf_counter()*1000000)
+        stm= int(time.clock()*1000)
         DEBUG(self.__class__.__name__, "-->")
         
         env=Wsgi.Request.From(env)
        
-        DEBUG("pathinfo=", env.PathInfo())
+        DEBUG._("pathinfo", env.PathInfo())
         
         try:
-            resp = self.do(env)
+            ct =env.Accept()
+            resp = self.do(env)     
+            DEBUG.RESP(resp)     
             if not isinstance(resp, Response):
+                if isinstance(resp, Html):
+                    resp=bytes(str(resp), _w.UTF_8)
+                elif isinstance(resp, dict):
+                   if ct==Mime.ApplicationJson:
+                      resp=json.dumps(resp)
+                   else:
+                      resp=str(resp)                
+                elif isinstance(resp, (list, tuple)):
+                    if ct==Mime.ApplicationJson:
+                        resp=json.dumps(resp)
+                    else:
+                        er=list()
+                        for e in rr:
+                            if isinstance(e, str):
+                                er.append(e.encode(_w.UTF_8))
+                            else:
+                                er.append(e)
+                        resp=er
+                elif resp is None:
+                    resp=""
+                elif isinstance(resp, str):
+                   resp = [resp.encode(_w.UTF_8)]
+                elif isinstance(resp, bytes):
+                   resp=[resp]
+                   
                 resp=Response(status=200, payload=resp)
+            
+            if ct is not None:
+               resp.ContentType(ct)                
+        
         except _Error as er:
             resp = self._error(er)
+            cd=er.Code
+            if cd==0:
+                cd=500
             if isinstance(resp, Response):
-                resp.Status(er.Code)
+                resp.Status(cd)
             else:
-                resp=Response(status=er.Code, payload=resp)        
+                resp=Response(status=cd, payload=resp)    
                     
-            
-        ste=int(time.perf_counter()*1000000)
+                    
+        ste=int(time.clock()*1000)
         
         resp.Header("x-timestamp-duration", str(ste-stm))        
         
-        DEBUG._("headers", resp.HeaderList())
+        DEBUG.STATUS(resp.StatusCode())
+        DEBUG.HEADERS(resp.HeaderList())
         begin_response(resp.StatusCode(), resp.HeaderList())
-        
-        if isinstance(resp, Response):
-           rr= resp.Payload()
-        else:
-            rr=resp
-        
-        ct =env.Accept()
-        if ct is not None:
-            resp.ContentType(ct)
             
-        if isinstance(rr, dict):
-            if ct==Mime.ApplicationJson:
-                rr=json.dumps(rr)
-            else:
-                rr=str(rr)
-                
-        elif isinstance(rr, (list, tuple)):
-            if ct==Mime.ApplicationJson:
-                rr=json.dumps(rr)
-            else:
-                er=list()
-                for e in rr:
-                    if isinstance(e, str):
-                        er.append(e.encode('utf-8'))
-                    else:
-                        er.append(e)
-                rr=er
-                
-        if isinstance(rr, str):
-            rr = [rr.encode("utf-8")]
-        elif isinstance(rr, bytes):
+        rr = resp.Payload()
+        if rr is None:
+            rr=[]
+        elif not isinstance(rr, (list, tuple)):
             rr=[rr]
         
         DEBUG("rr=", type(rr), rr)
