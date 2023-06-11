@@ -93,8 +93,15 @@ class Token_String(Token):
         
     @classmethod
     def Parse(cls, c, tkz):
-        
-        return
+        if tkz.notEof():
+            dl=c
+            c=tkz.read()        
+            while tkz.notEof() and c!=dl:
+                s += c
+                c=tkz.read()
+            return Token_Strinf(s)
+            
+        return Token_Eof()
     
     pass
     
@@ -218,7 +225,6 @@ class Tokenizer():
         cc = self.read()
         while self.notEof() and cc in (' ', '\r', '\n', '\t'):
             cc = self.read()
-            time.sleep(1)
             
         return cc  
         

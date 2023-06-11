@@ -166,7 +166,7 @@ class Dict(dict):
             if item == item.upper():
                 i = item.replace('_', '-')
                 i = sys.intern(i.title())
-                return self[i]
+                return self.get(i, None)
         raise AttributeError("attibute not found %s in %s" % (item, self.__class__.__name__))
 
         return super().__getattr__(item)
