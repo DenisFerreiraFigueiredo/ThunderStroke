@@ -1,0 +1,13 @@
+Domain:
+    Docker: node
+    Memory: 250mb
+              
+Identify:
+ConfigDb:
+SimpleDb:
+Gateway:
+Lambda:
+LambdaJs:
+LambdaJava:
+LambdaGo:
+
