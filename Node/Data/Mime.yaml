@@ -43,6 +43,12 @@ Application:
         - .zip
     7z:
         - .7z
+    dns-message:
+        - .dns
+    dns-json:
+        - .djson
+    GraphQl:
+        - .graphql
         
         
 Text:
