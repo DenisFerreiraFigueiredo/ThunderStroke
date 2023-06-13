@@ -64,6 +64,7 @@ Description = _i("Description")
 Javascript = _i("Javascript")
 Java = _i("Java")
 Python = _i("Python")
+Message = _i("Message")
 
 Thunder = _i("Thunder")
 Stroke = _i("Stroke")

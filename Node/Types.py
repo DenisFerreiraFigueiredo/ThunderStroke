@@ -129,6 +129,19 @@ class Dict(dict):
             self.update(ss)
         return self 
             
+    def Validate(self, p, dflt=None):
+        if not p in self:
+            p=p.capitalize()
+            if not p in self:
+                p=p.upper()
+                if not p in self:
+                    p=p.lower()
+                    if not p in self:
+                        p = p.title()
+                        if not p in self:
+                            return dflt
+                
+        return p
         
     def loadFromYaml(self, path, pwd=None):
         if pwd is not None:

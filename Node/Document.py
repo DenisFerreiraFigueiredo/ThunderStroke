@@ -21,6 +21,16 @@ import json
 
 class Document(Types.Dict):
     
+    @classmethod 
+    def From(cls, s):
+        if type(s)==dict:
+            return Document(s)
+        elif type(s)==cls:
+            return s
+        elif isinstance(s, Types.Dict):
+            return Document(s)
+        return None
+    
     def __init__(self, *args, **kvargs):
         self._Id=kvargs.pop("Id", None)
         #print("args", args)

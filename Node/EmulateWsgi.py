@@ -8,12 +8,18 @@ import time
 
 from pathlib import Path
 
+ipth = Path(__file__).parent.parent
+ipth = str(ipth)
+
+if ipth not in sys.path:
+    sys.path.insert(0, ipth)
+
 import logging
 from logging.handlers import SysLogHandler
 
 import wsgiserver    
 
-from Io import DEBUG
+from Node.Io import DEBUG
 
 def _handler(env, begin_response):   
     h = ( ("content-type", "text/plain"),
@@ -72,6 +78,10 @@ class EmulateWsgi():
         
  
         print("handle=", handler)
+        if callable(handler):
+            pass
+        elif hasattr(handler, "handler"):
+            handler=handler.handler
                                 
         server = wsgiserver.WSGIServer(handler, host='0.0.0.0', port=port)
     

@@ -19,8 +19,6 @@ import http.client
 import urllib
 import requests
 import time
-import json
-import yaml
 import traceback
 
 from Node import Words as _w
@@ -29,6 +27,7 @@ from Node.Io import DEBUG
 from Node.Mime import Mime
 from Node.Types import Types
 from Node.Html import Html
+from Node.Data import Data
  
 _w.Forbidden = _w._i("Forbidden")
 _w.Localhost = _w._i("Localhost")
@@ -154,9 +153,9 @@ class Error(_Error):
     PermanentRedirect = _Error(308, "Permanent Redirect")
     
     BadRequest = _Error(400, ("Bad ","Request"))
-    Unauthorized = _Error(401, "unauthorized")
+    Unauthorized = _Error(401, "Unauthorized")
     Forbidden = _Error(403, _w.Forbidden)
-    PaymentRequired = _Error(402, "Payment Required")
+    PaymentRequired = _Error(402, ("Payment","Required"))
     NotFound = _Error(404, ("Not","Found"))
     MethodNotAllowed = _Error(405, ("Method", "Not","Allowed"))
     NotAcceptable = _Error(406, ("Not","Acceptable"))
@@ -185,7 +184,7 @@ class Error(_Error):
     ClientClosedRequest = _Error(499, "Client Closed Request")
 
     InternalServerError = _Error(500, "Internal Server Error")
-    TarggetNotImplemented = _Error(501, "Not Implemented") 
+    TargetNotImplemented = _Error(501, "Not Implemented") 
     BadGateway = _Error(502, "Bad Gateway")
     ServiceUnavailable = _Error(503, "Service Unavailable")
     GatewayTimeout = _Error(504, "Gateway Timeout")
@@ -202,7 +201,7 @@ class Error(_Error):
     
 
 
-class PathInfo(Types.List):
+class Pathinfo(Types.List):
     
     def __init__(self, s=None):
         super().__init__()
@@ -289,13 +288,20 @@ class Request():
         if isinstance(e, Request):
             return e
         return Request(e)
+        
+    _DataTypes = {
+    	            Mime.TextPlain: lambda x: x,
+    	            Mime.ApplicationJson: lambda x: Data.fromJson(x),
+    	            Mime.ApplicationYaml: lambda x: Data.fromYaml(x),
+    	            Mime.ApplicationXml: lambda x: Data.FromXml(x),
+    	            }
     
     def __init__(self, env=None):
         super().__init__()
         if not isinstance(env, dict):
            raise ValueError()
                      
-        #print("env=", env)    
+        #DEBUG("env=", env)    
             
         #al = env.get("HTTP_ACCEPT_LANGUAGE", None)
         #ae = env.get("HTTP_ACCEPT_ENCODING", None)
@@ -330,7 +336,7 @@ class Request():
         self._Method = Method.Validate(env.get("REQUEST_METHOD", Method.Get), Method.Get)                            
         self._Version = env.get("wsgi.version", (1,0))
         self._Path= env.get("PATH_INFO", "")
-        self._PathInfo = PathInfo(self._Path)
+        self._Pathinfo = Pathinfo(self._Path)
         self._PathArg = dict()
         #self._Accept = ac,", "")
         self._Query = None
@@ -349,17 +355,24 @@ class Request():
         self._ServerSoftware = env.get("SERVER_SOFTWARE", None)
         
         dt= self.Read()
+        ct = self._ContentType
+        fn = self._DataTypes.get(ct, None)
+        if callable(fn):
+            dt=fn(dt)
+        self._Content=dt
         return
           
-    
+    @property 
     def Version(self):
         return self._Version
         
+    @property
     def Path(self):
         return self._Path
     
-    def PathInfo(self):
-        return self._PathInfo
+    @property 
+    def Pathinfo(self):
+        return self._Pathinfo
         
     def PathParm(self):
         return self._PathParm
@@ -367,19 +380,23 @@ class Request():
     @property 
     def Method(self):
         return self._Method
-        
+    
+    @property 
     def ScriptName(self):
         return self._ScriptName
         
     def RemoteAddress(self):
         return self._RemoteAddress
         
+    @property 
     def RequestUri(self):
         return self._RequestUri 
         
+    @property 
     def PathArg(self):
         return self._PathArg
              
+    @property 
     def QueryStrinf(self):
         return self._QueryString
         
@@ -396,15 +413,20 @@ class Request():
             return self._Query.get(var, dflt)        
         return self._Query
         
-    def ContentType(self):
+    def ContentType(self, ct=None):
+        if ct is not None:
+            return (self._ContentType==ct)
         return self._ContentType
     
+    @property 
     def ContentLength(self):
         return self._ContentLength
     
+    @property 
     def ServerName(self):
         return self._ServerName
     
+    @property 
     def ServerPort(self):
         return self._ServerPort
     
@@ -414,16 +436,17 @@ class Request():
                 return True
             else:
                 return False
-        return self._Accept
+        return self._Accept        
         
     def Headers(self):
         return self._Headeds
     
+    @property 
     def Input(self):
         return self._Input
         
     def Read(self):
-        fd=self.Input()
+        fd=self.Input
         #print("fd=", fd)
         s=fd.read(Request.__MaxContentLength)    
         #print("s=", s)
@@ -487,171 +510,161 @@ class Response():  ## http.client.HTTPResponse
         
     pass
     
-class Wsgi(dict):
-    
-    Request = Request
-    Response = Response
-    
-    def __init__(self, parent, name, route=None):
-        super().__init__()
-        name= name.replace(" ", '').replace("-", "_")
-        name = name.capitalize()
-        self._Parent=parent
+
+class WsgiHandler():
+
+
+    def __init__(self, name):
         self._Name=name
-        if route is None:
-            self._Route=name
-        else:
-            self._Route=route
-        if parent is not None:
-            if isinstance(parent, Wsgi):
-                parent[name]=self
         return
-              
-    @property 
-    def Route(self):
-        return self._Route
-      
-    @property 
-    def Parent(self):
-        return self._Parent
-        
+    
     @property 
     def Name(self):
-        return self._Name
+        return self._Name             
     
-    def Get(self, env):        
+    def Get(self, req):
         return None
         
     def Put(self, env):
-        return
+        raise Http.Error.MethodNotAllowed()
     
     def Post(self, env):
-        return
+        raise Http.Error.MethodNotAllowed()
     
     def Head(self, env):
-        return
+        return None
         
     def Options(self, env):
-        return
+        raise Http.Error.MethodNotAllowed()
         
     def Connect(senf, env):
-        return
+        raise Http.Error.MethodNotAllowed()
        
     def Delete(self, env):
-        return
+        raise Http.Error.MethodNotAllowed()
         
     def Info(self, env):
-        return
+        raise Http.Error.MethodNotAllowed()
         
     def Patch(self, env):
-        return
+        raise Http.Error.MethodNotAllowed()
         
     def Lock(self, env):
         raise Http.Error.MethodNotAllowed()
         
     def Unlock(self, env):
-        raise Http.Error.MethodNotAllowed()    
+        raise Http.Error.MethodNotAllowed()   
         
-    def _error(self, exc):
+    def _router(self, part):
+        return None
+
+    def do(self, req):
+        DEBUG.DO(self.__class__.__name__, "-->")
+        mm = req.Method
+        
+        ac =req.Accept()           
+        DEBUG.ACCEPT(ac)
+        
+        ct = req.ContentType        
+        DEBUG.METHOD(mm, ct)
+        
+        pp=req.Pathinfo
+        if pp.notIsEmpty():
+            DEBUG.DO.PATH(pp)
+            pp=pp.First().capitalize()
+            DEBUG.DO.PATH(pp)             
+            DEBUG.DO.PATH.ARG(req.PathArg)
+            fi="_"+pp.upper()+"_"
+            fn=fi+mm
+            fn=getattr(self, fn, None)
+            if callable(fn):
+               tg=req.Pathinfo.popFirst()
+               req.PathParm().append(tg)
+               resp=fn(req)
+            else:
+                fi=getattr(self, fi, None)
+                if callable(fi):
+                    tg=req.Pathinfo.popFirst()
+                    req.PathParm().append(tg)
+                    resp=fi(req)
+                else:
+                    tg=self._router(pp)
+                    if tg is not None:
+                        DEBUG.TARGET(tg.Name, tg)
+                        req.Pathinfo.popFirst()
+                        req.PathParm().append(tg)
+                        return tg.do(req)
+                    else:
+                        fn = getattr(self, mm, None)
+                        if callable(fn):
+                            resp = fn(req)
+                        else:
+                            raise Http.Error.MethodNotAllowed()
+            
+        return resp
+        
+    def _error(self, exc, ct=Mime.ApplicationJson):
         resp={
         	     _w.Error: exc.Code,
         	     _w.Message: exc.Message
         	     }        
-        return resp        
-            
-    def _router(self, part):
-        r=None
-        part=part.upper()
-        for e, v in self.items():
-            DEBUG.ROUTER(e, v)
-            if isinstance(v._Route, str) and v._Route.upper()==part:
-                 return v
-            elif isinstance(v._Route, (list, tuple)):
-                 for ee in v._Route:
-                     if ee.upper()==part:
-                         return v
-            elif callable(v._Route) and v.Route(part):
-                 return v
-                      
-        return None
+        return self.doResponse(resp, ct=ct)      
         
-    def do(self, req):
-        DEBUG.DO(self.__class__.__name__, "-->")
-      
-        pp=req.PathInfo()
-        if pp.notIsEmpty():
-            DEBUG.PATH(pp)
-            pp=pp.First().capitalize()
-            DEBUG.PATH(pp)             
-            DEBUG.PATH._("arg", req.PathArg())
-            fi="_"+pp.upper()+"_"
-            fi=getattr(self, fi, None)
-            if callable(fi):
-                resp=fi(env)
-            else:
-                tg=self._router(pp)
-                if tg is not None:
-                    DEBUG.TARGET(tg.Name, tg)
-                    req.PathInfo().popFirst()
-                    req.PathParm().append(tg)
-                    return tg.do(req)
-                            
-        ct =req.Accept()           
-        #DEBUG.ACCEPT(ct)
+    def doResponse(self, resp, ct):
+        DEBUG.RESP(resp)     
+        if not isinstance(resp, Response):
+            if isinstance(resp, Html):
+               resp=bytes(str(resp), _w.UTF_8)
+               
+            elif isinstance(resp, dict):
+                if ct==Mime.ApplicationJson:
+                   resp=Data.toJson(resp, encode=_w.UTF_8)
+                else:
+                   resp=str(resp).encode(_w.UTF_8)
+               
+            elif isinstance(resp, (list, tuple)):
+                 if ct==Mime.ApplicationJson:
+                     resp=Data.toJson(resp, encode=_w.UTF_8)
+                 else:
+                     er=list()
+                     for e in rr:
+                         if isinstance(e, str):
+                             er.append(e.encode(_w.UTF_8))
+                         else:
+                             er.append(e)
+                     resp=er
+                    
+            elif resp is None:
+                 resp=[b""]
                 
-        mm = req.Method
-        DEBUG.METHOD(mm)
-        fn = getattr(self, mm, None)
-        if callable(fn):
-            resp = fn(req)
-        else:
-            raise Http.Error.MethodNotAllowed()
-            
+            elif isinstance(resp, str):
+                resp = [resp.encode(_w.UTF_8)]
+                
+            elif isinstance(resp, bytes):
+                resp=[resp]
+               
+            resp=Response(status=0, payload=resp)
+           
+            if ct is not None:
+                resp.ContentType(ct)
+                
         return resp
-             
+       
+        
     def handler(self, env, begin_response):
         stm= int(time.clock()*1000)
-        DEBUG(self.__class__.__name__, "-->")
+        DEBUG.HANDLER(self.__class__.__name__, "-->")
         
         env=Wsgi.Request.From(env)
        
-        DEBUG._("pathinfo", env.PathInfo())
+        DEBUG.PATHINFO(env.Pathinfo)
         
         try:
             ct =env.Accept()
             resp = self.do(env)     
             DEBUG.RESP(resp)     
-            if not isinstance(resp, Response):
-                if isinstance(resp, Html):
-                    resp=bytes(str(resp), _w.UTF_8)
-                elif isinstance(resp, dict):
-                   if ct==Mime.ApplicationJson:
-                      resp=json.dumps(resp)
-                   else:
-                      resp=str(resp)                
-                elif isinstance(resp, (list, tuple)):
-                    if ct==Mime.ApplicationJson:
-                        resp=json.dumps(resp)
-                    else:
-                        er=list()
-                        for e in rr:
-                            if isinstance(e, str):
-                                er.append(e.encode(_w.UTF_8))
-                            else:
-                                er.append(e)
-                        resp=er
-                elif resp is None:
-                    resp=""
-                elif isinstance(resp, str):
-                   resp = [resp.encode(_w.UTF_8)]
-                elif isinstance(resp, bytes):
-                   resp=[resp]
-                   
-                resp=Response(status=200, payload=resp)
-            
-            if ct is not None:
-               resp.ContentType(ct)                
-        
+            resp = self.doResponse(resp, ct)     
+            resp.Status(200)                
         except _Error as er:
             resp = self._error(er)
             cd=er.Code
@@ -677,9 +690,61 @@ class Wsgi(dict):
         elif not isinstance(rr, (list, tuple)):
             rr=[rr]
         
-        DEBUG("rr=", type(rr), rr)
+        DEBUG.HANDLER.RR(type(rr), rr)
         return rr
         
+
+    pass
+    
+class Wsgi(dict, WsgiHandler):
+    
+    Request = Request
+    Response = Response
+    
+    def __init__(self, parent, name, route=None):
+        super().__init__()
+        WsgiHandler.__init__(self, name)
+        name= name.replace(" ", '').replace("-", "_")
+        name = name.capitalize()
+        self._Parent=parent
+        #self._Name=name
+        if route is None:
+            self._Route=name
+        else:
+            self._Route=route
+        if parent is not None:
+            if isinstance(parent, Wsgi):
+                parent[name]=self
+        return
+              
+    @property 
+    def Route(self):
+        return self._Route
+      
+    @property 
+    def Parent(self):
+        return self._Parent
+        
+ 
+            
+    def _router(self, part):
+        r=None
+        part=part.upper()
+        for e, v in self.items():
+            DEBUG.ROUTER(e, v)
+            if isinstance(v._Route, str) and v._Route.upper()==part:
+                 return v
+            elif isinstance(v._Route, (list, tuple)):
+                 for ee in v._Route:
+                     if ee.upper()==part:
+                         return v
+            elif callable(v._Route) and v.Route(part):
+                 return v
+                      
+        return None
+        
+             
+    
         
         
     pass

@@ -17,8 +17,7 @@ from Node import Words as _w
 
 from Node.Arrange import Arrange
 from Node.FlatModel import FlatModel
-
-
+from Node.Http import WsgiHandler
 
 class serviceConfig():
         
@@ -70,9 +69,12 @@ class serviceConfig():
             
     pass
 
-class Service(FlatModel, Arrange):
+class Service(FlatModel, Arrange, WsgiHandler):
+    
+    Config = serviceConfig
     
     def __init__(self, partition=_w.Default):
+        WsgiHandler.__init__(self, partition)
         self._Partition=partition
         self.Cfg = None
         self._Instance = dict()
@@ -144,12 +146,11 @@ class Service(FlatModel, Arrange):
         
     def status(self):
         return False
-        
-    def version(self):
-        return (0, 0, 0)
-        
-   
 
+    def Version(self, *args, **opts):
+        return (0, 0, 0)
+ 
+      
     pass
 
 
