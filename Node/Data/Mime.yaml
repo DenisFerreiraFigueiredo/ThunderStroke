@@ -49,6 +49,12 @@ Application:
         - .djson
     GraphQl:
         - .graphql
+    x-httpd-cgi:
+        - .cgi
+    x-sql:
+        - .sql
+    base64:
+        - .mm
         
         
 Text:
@@ -62,6 +68,10 @@ Text:
     Csv:
         - .csv
     Calendar:
+        - .ics
+    sgml:
+        - .sgml
+    calendar:
         - .ics
         
 
@@ -80,6 +90,8 @@ Image:
     Tiff:
         - .tif
         - .tiff    
+    svg+xml:
+        - .svg
         
         
 Font:
