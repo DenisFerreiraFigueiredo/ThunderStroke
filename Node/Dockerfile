@@ -61,25 +61,28 @@ RUN apk add py3-json-database && \
     apk add py3-html5lib
 #RUN apk add py3-dsnpython
 
-RUN pip install pyyaml pymongo requests wsgiserver celery
+RUN pip install pyyaml pymongo requests wsgiserver celery ntplib
 
-RUB apk add libzmq zeromq
+RUN pip install requests-unixsocket
+
+RUN apk add libzmq zeromq
 
 #RUN apk del py3-pip
 
 RUN apk add unit \
 #            unit-tools \
-            unit-python3 
-#            unit-ruby 
+            unit-python3 unit-openrc
     
 RUN apk add memcached && \
     apk add redis hiredis
 
-USER thunder
+#USER thunder
+
+ENV THUNDERSTROKE_ROLE=${ROLE}
 
 VOLUME ["/WORK"]
 
-WORKDIR /TStroke/Node
+WORKDIR /TStroke/${ROLE}
 
 COPY * .
 

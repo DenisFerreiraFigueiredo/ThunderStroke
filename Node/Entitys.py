@@ -18,6 +18,7 @@ from Node import Words as _w
 from Node.File import Input
 from Node.Http import Request, Response
 from Node import Node
+from Node.Document import Document
 
 from Node import Words as _w
 
@@ -42,14 +43,16 @@ class Test():
         return cls._Client
         
     @classmethod 
-    def Db(cls):
+    def Db(cls, col=None):
         if cls._Db is None:
             cls._Db = cls.Client()[_w.Test]
+        if col is not None:
+            return cls._Db[col]
         return cls._Db
    	
     pass
     
-class Entity():
+class Entity(Document):
     
     
     
@@ -69,15 +72,20 @@ class Entitys():
     def Prepare(self):
         return
         
+    @property 
     def Collection(self):
-        if self._Collection== None:
-            self._Collection=self._Root.Db()[self._Name]
+        if self._Collection is None:
+            self._Collection=self._Root.Db(self._Name)
+            self._Collection.State(True)
         return self._Collection
         
-    def Find(self, _id):          	
-        r = self.Collection().find_one({"_id": _id})
-        if r is dict:            
-            return r        
+    def Find(self, _id):
+        if _id is None:
+            return None
+        else:
+            r = self.Collection.Find(_id)
+            if r is dict:            
+                return r        
         return None
         
     def newId(self):
@@ -86,22 +94,25 @@ class Entitys():
         
     def create(self, _id):
         r = {
-        	  "_id": _id,
-        	  _w.Name: "xxx"
+        	    "_id":        _id,
+        	    _w.Parent:    None,
+        	    _w.Name:      "xxx",
+        	    _w.Uuid:     None,
+        	    _w.Active:   None,
         	    }
-        self.Collection().Insert(r) 
+        self.Collection.Insert(r) 
 
         return False       
         
     def EnsureLoad(self, key, path, pwd=None):
         rr = Input.YAML.Load(path, pwd=pwd)
-        self.Collection().loadFrom(key, rr, True)       
+        self.Collection.loadFrom(key, rr, True)       
         return
         
     def _Test(self):
         print(self.__class__.__name__,"=", self.newId())
      
-        rr=self.Collection().Find()
+        rr=self.Collection.Find()
         if rr is not None:
             for r in rr:
                 print(r)
@@ -116,7 +127,7 @@ class Entitys():
     
     
 def handler(env, begin_response):
-    return Domain.handler(env, begin_resoonse)
+    return Entity.handler(env, begin_resoonse)
     
 
 if __name__ =="__main__":  

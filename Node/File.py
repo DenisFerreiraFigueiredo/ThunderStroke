@@ -7,6 +7,8 @@ import os
 
 import json
 import yaml
+import xml
+import inspect
 
 from pathlib import Path
 
@@ -24,6 +26,8 @@ class _File():
     @staticmethod 
     def asPath(p, pwd=None, suffix=None):
         if pwd is not None:
+            if inspect.isclass(pwd):
+                pwd=inspect.getfile(pwd)
             pwd=Path(pwd)
             if not pwd.is_dir():
                 pwd=pwd.parent
