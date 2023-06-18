@@ -13,11 +13,15 @@ if ipth not in sys.path:
     sys.path.insert(0, ipth)
 
 from Node import Words as _w
+
+from Node.System import System
 from Node.File import File
 from Node.Markup import Markup
 from Node.Mime import Mime
+from Node.Io import DEBUG
 
 from io import StringIO
+import json
 
 _i = sys.intern
 
@@ -83,15 +87,15 @@ _w.Center = _i('Center')
 _w.JUSTIFY = _i('Justify')
 _w.VAR = _i('Var')
 _w.Title = _i('Title')
-_w.PRE = _i('Pre')
+_w.Pre = _i('Pre')
 _w.ARTICLE = _i('Article')
 _w.Style = _i('Style')
 _w.CHECKED = _i('Checked')
-_w.DEL = _i('Del')
-_w.IMG = _i('Img')
-_w.CLASS = _i('Class')
+_w.Del = _i('Del')
+_w.Img = _i('Img')
+_w.Class = _i('Class')
 _w.Link = _i('Link')
-_w.IMAGE = _i('Image')
+_w.Image = _i('Image')
 _w.DIRNAME = _i('Dirname')
 _w.Sizes = _i('Sizes')
 _w.Br = _i('Br')
@@ -111,7 +115,7 @@ _w.LI = _i('Li')
 _w.A = _i('A')
 _w.Align = _i('Align')
 _w.MAIN = _i('Main')
-_w.FORM = _i('Form')
+_w.Form = _i('Form')
 _w.LANG = _i('Lang')
 _w.Table = _i('Table')
 _w.REL = _i('Rel')
@@ -119,10 +123,10 @@ _w.CODE = _i('Code')
 _w.MAX = _i('Max')
 _w.MIN = _i('Min')
 _w.DRAGGABLE = _i('Draggable')
-_w.BASE = _i('Base')
+_w.Base = _i('Base')
 _w.AUTOFOCUS = _i('Autofocus')
 _w.HEIGTH = _i('Heigth')
-_w.CAPTION = _i('Caption')
+_w.Caption = _i('Caption')
 _w.WIDTH = _i('Width')
 _w.CITE = _i('Cite')
 _w.VIDEO = _i('Video')
@@ -151,6 +155,9 @@ _w.SEARCH = _i('Search')
 _w.MARK = _i('Mark')
 _w.CONTENTEDITABLE = _i('Contenteditable')
 _w.COLGROUP = _i('Colgroup')
+_w.Module = _i('Module')
+_w.JQuery = _i('JQuery')
+
 #
 #
 _w.__BLANK = _i('_Blank')
@@ -158,11 +165,15 @@ _w.__SELF = _i('_Self')
 _w.__TOP = _i('_Top')
 _w.__PARENT = _i('_Parent')
 
+__Sequence= 0
+
+def next_id(): 
+    global __Sequence 
+    __Sequence +=1
+    return "Id"+str(__Sequence )
+
 
 class _globalAttr():
-
-    def _Id(self, s=None):
-        return self(_Id=s)
 
     def _Class(self, s=None):
         return self(_Class=s)
@@ -201,14 +212,6 @@ class _globalAttr():
         return self(_Translate=s)
 
     pass
-    
-class _Type():
-    
-    def _Type(self, s=None):
-        return self(_Type=s)
-
-    
-    pass
 
 class _Src():
 
@@ -220,38 +223,6 @@ class _Src():
 
     pass
 
-
-class _Name():
-
-    def _Name(self, s=None):
-        return self(_Name=s)
-         
-    pass
-
-class _Label():
-
-    def _Label(self, s=None):
-        return self(_Labek=s)
-        
-    pass
-
-
-class _Ismap():
-
-    def _Ismap(self, s=None):
-        return self(_Ismap=s)
-
-    pass
-
-
-class _Charset():
-
-    def _Charset(self, s=None):
-        return self(_Charset=s)
-
-    pass
-
-
 class _Colspan():
 
     def _Colspan(self, s):
@@ -261,47 +232,6 @@ class _Colspan():
         return self(_Rowspan=s)
 
     pass
-
-
-class _Data():
-
-    def _Data(self, s):
-        return self(_Data=s)
-
-    pass
-
-
-class _Rel():
-
-    def _Rel(self, s):
-        return self(_Rel=s)
-
-    pass
-
-
-class _Open():
-
-    def _Open(self, f=None):
-        return self(_Open=f)
-    
-    pass
-
-
-class _Media():
-
-    def _Media(self, s):
-        return self(_Medua=s)
-     
-    pass
-
-
-class _Sizes():
-
-    def _Sizes(self, s):
-        return self(_Sizes=s)
- 
-    pass
-
 
 class _Target():
 
@@ -314,12 +244,6 @@ class _Target():
     pass
 
 
-class _Autofocus():
-
-    def _Autofocus(self, s):
-        return self(_Autofocus=s)
-
-    pass
 
 
 class _Href():
@@ -333,20 +257,6 @@ class _Href():
     pass
 
 
-class _Value():
-
-    def _Value(self, s):
-        return self(_Value=s)
-        
-    pass
-
-
-class _Valuetype():
-
-    def _Valuetype(self, s):
-        return self(_Valuetype=s)
-                
-    pass
 
 
 class _Max():
@@ -476,13 +386,25 @@ class asTag(list, _globalAttr):
         self._Empty= empty
         #self._BreakAfter= _breakafter
         #self._Indent=_indent
-        #print("init indent", tag, _indent)
+        #DEBUG("init indent", tag, _indent)
         self._Arguments = {}
         if hasattr(parent, "append") and callable(getattr(parent, "append")):
            parent.append(self)
         self(**attrs)
         return
         
+    @property 
+    def Contents(self):
+        return self
+        
+    @property 
+    def Root(self):
+        if self._Parent is None:
+            return self
+        if hasattr(self._Parent, _w.Root):
+            return self._Parent.Root
+        return self
+         
     def prefix(self, out):
         return
         
@@ -502,29 +424,31 @@ class asTag(list, _globalAttr):
             self.Attr(e, v)
         return self
      
-    def __setattr__(self, item, v):
-        if isinstance(item, str):
-           if item == item.upper():
-              item = item.replace('_', '-')
-              item = sys.intern(item.title())
-              self._Arguments[item] = v
-              return
+    def __setattr__(self, i, v):
+        if i.isupper():
+            i = i.replace('_', '-')
+            i = sys.intern(i.title())
+            self._Arguments[i] = v
+            return
 #    raise AttributeError("attibute not found %s in %s" % (item, self.__class__.__name__))
 
-        return super().__setattr__(item, v)
+        return super().__setattr__(i, v)
         
     def __getattr__(self, i):
-        if isinstance(i, str):
-            if i.isupper():
-                i = i.replace('_', '-')
-                i = sys.intern(i.title())
-                return self._Arguments.get(i, None)
-        raise AttributeError("attibute not found %s in %s" % (i, self.__class__.__name__))
+        print("---", i)
+        if i.isupper():
+            i = i.replace('_', '-')
+            i = sys.intern(i.title())
+            return self._Arguments.get(i, None)
+        raise AttributeError("TAG: attibute not found %s in %s" % (i, self.__class__.__name__))
 
         return super().__getattr__(item)
         
     def writeout_open(self, out):
         self.prefix(out)
+        if self._Tag is None:
+            return
+            
         out.write("<")
         out.write(self._Tag)
         if self._Arguments is not None:
@@ -542,7 +466,7 @@ class asTag(list, _globalAttr):
                     else:
                         out.write(_w._False)
                 elif v==None:
-                    out.write("Null")
+                    out.write(_w.Null)              
                 elif type(v)==str:
                     out.write('"')
                     out.write(v)
@@ -555,13 +479,21 @@ class asTag(list, _globalAttr):
         return
         
     def writeout_close(self, out):
-        out.write("</")
-        out.write(self._Tag)
-        out.write(">")
+        if self._Tag is not None:
+            out.write("</")
+            out.write(self._Tag)
+            out.write(">")
+        return
+        
+    def writeout_part(self, s, out, _indent=0):
+        if _indent >0:
+            out.write("\t"*_indent)
+        out.write(s)
+        out.write("\n")
         return
     
     def writeout(self, out, _indent=0):
-        #print("writeout i=",_indent)
+        #DEBUG.WRITEOUT("i=",_indent
         if _indent >0:
             out.write("\t"*_indent)
         self.writeout_open(out)
@@ -574,7 +506,7 @@ class asTag(list, _globalAttr):
                i=_indent + 1 # len(self._Tag)+2
         else:
             i=0
-        #print("writeout indent", self._Indent)   
+        #DEBUG.WRITEOUT("indent", self._Indent)   
         
         #print("---i=", i)
         ff=False            
@@ -600,9 +532,10 @@ class asTag(list, _globalAttr):
       
             if self._Break or self._BreakClose:
                 out.write("\n")
-            
-        return
-            
+                
+        return self 
+        
+        
     def __enter__(self):
         return self
 
@@ -619,18 +552,52 @@ class asTag(list, _globalAttr):
         self.writeout(s)
         return s.getvalue()
         
-    def bytes(self, encode="utf-8"):
+    def bytes(self, encode=_w.UTF_8):
         return bytes(str(self), encode)
+        
+    def Find(cls, tag=None, all=False, _id=None, _class=None):
+        r=[]
+        for e in self:
+            ff=False            
+            if tag is None:
+                ff=True
+            elif e._Tag==tag:
+                ff=True
+            if not ff and (_id is not None):
+                i=self._Arguments.get(_w.Id, None)  
+                if _id==i:
+                    ff=True
+            if not ff and (_class is not None):
+                c=self._Arguments.get(_w.Class, None)
+                if _class==c:
+                    ff=True
+            if ff:
+                if all:
+                   r.append(e)
+                else:
+                   return e
+        if len(r)>0:
+            return r
+           
+        return None
     
+    _Requires = None
+    
+    @classmethod 
+    def Requires(cls, k, f=True):
+        if cls._Requires is None:
+            cls._Requires={}
+        cls._Requires[k]=f
+        return 
+        
     pass
 
 
 class asComment(asTag):
     
     def __init__(self, parent):
-        asTag.__init__(self, parent, None, sbreak=True)       
-        return
-        
+        super().__init__(parent, None, sbreak=True)       
+        return        
         
     def writeout_open(self, out):
         out.write("<!-- ")
@@ -645,17 +612,17 @@ class asComment(asTag):
 class asTitle(asTag):
     
     def __init__(self, parent, *s, **attrs):
-        asTag.__init__(self, parent, _w.Title, breakclose=True, **attrs)  
+        super().__init__(parent, _w.Title, breakclose=True, **attrs)  
         self(*s)    
         return
         
         
     pass
     
-class asStyle(asTag, _Media, _Type, _Event):
+class asStyle(asTag, _Event):
     
     def __init__(self, parent, *s, **attrs):
-        asTag.__init__(self, parent, _w.Style, sbreak=True, **attrs)  
+        super().__init__(parent, _w.Style, sbreak=True, **attrs)  
         for e in s:
             self.append(e)    
         
@@ -666,7 +633,7 @@ class asStyle(asTag, _Media, _Type, _Event):
 class asLink(asTag):
     
     def __init__(self, parent, rel, href, type=None):
-        asTag.__init__(self, parent, _w.Link, sbreak=True, empty=True, single=True)   
+        super().__init__(parent, _w.Link, sbreak=True, empty=True, single=True)   
         self(rel=rel, href=href, type=type)    
         return
         
@@ -686,7 +653,7 @@ class asScript(asTag):
     	            referrerpolicy=None
     	            ):
         
-        asTag.__init__(self, parent, _w.Script, sbreak=True)   
+        super().__init__(parent, _w.Script, sbreak=True)   
         self(src=src,
         	     language=language,
         	     defer=defer
@@ -695,41 +662,109 @@ class asScript(asTag):
     
     pass
     
-class asMeta(asTag):
+class _HeadContent_():    
+    pass
     
-    def __init__(self, parent, **attrs):
-        asTag.__init__(self, parent, _w.Meta, sbreak=True, sempty=True, **attrs)
+class asHeadBlock(asTag, _HeadContent_):
+    
+    def __init__(self, parent):
+        super().__init__(parent, tag=None, sbreak=True, empty=True)
+        return
+        
+    pass
+    
+class asCode(list):
+    
+    def __init__(self, parent, *args, **opts):
+        super().__init__(*args, **opts)
+        return
+        
+    def __call__(self, *s):
+        self.extend(s)        
+        return self
+        
+    def writeout(self, out, _indent=1):        
         return
     
     pass
 
-class asHead(asTag):
+class asJQuery(asScript):
+    
+    def __init__(self, parent):        
+        if System.isDevelop:
+            u="https://code.jquery.com/jquery-3.7.0.min.js" ## integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+        else:
+            u="/Scripts/JQuery/jquery.js" 
+        super().__init__(parent, src=u)
+        return
+    
+    pass    
+    
+class asStylesheet(asLink):
+    
+    def __init__(self, parent, href, **attrs):
+        super().__init__(parent, rel=_w.Stylesheet, href=href, **attrs)
+        return
+    
+    pass
+    
+class asJavascriptCode(asCode):
+
+    pass
+
+class asJQueryUi(asJQuery):
     
     def __init__(self, parent):
-        asTag.__init__(self, parent, _w.Head, sbreak=True)       
+        super().__init__(parent)
+        if System.isDevelop:
+            u="https://code.jquery.com/ui/1.13.2/jquery-ui.js"
+            c="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css"
+        else:
+            u="/Scripts/JQuery/jquery.js" 
+            c="/Scripts/JQuery/Ui/jquery-ui.css"
+        self._JQueryUi=asScript(None, src=u)
+        self._Stylesheet=asStylesheet(None, href=c)
+        self._Initialize=None
         return
         
-    def Title(self, *s):
-        return asTitle(self, *s)
+    def InitializeFor(self, target, obj):
+        if self._Initialize is None:
+            self._Initialize ={}    
+        self._Initialize[target]=obj      
+        return self
         
-    def Comment(self):
-        return asComment(self)
-        
-    def Meta_Charset(self, charset=None):
-        return asMeta(self, charset=charset)
+    def writeout(self, out, _indent=0):
+        #super().writeout(out, _indent)
+        self._JQueryUi.writeout(out, _indent)
+        self._Stylesheet.writeout(out, _indent)
+        if self._Initialize is not None:      
+            self.writeout_part("<Script>", out, _indent)     
+            self.writeout_part('$( function() {', out, _indent)  
+            for e, cd in self._Initialize.items():
+                cd.doInitialize(out, _indent+2)
+            self.writeout_part('}', out, _indent+2)
+            self.writeout_part(');', out, _indent)
+            self.writeout_part('</Script>', out, _indent)
+        return
+           
+    pass
     
-    def Meta_Item(self, name=None, content=None):
-        return asMeta(self, name=name, content=content)
+class asMeta(asTag):
     
-    def Meta_HttpEquiv(self, http_equiv=None, content=None):
-        return asMeta(self, http_equiv=http_equiv, content=content)
-        
+    def __init__(self, parent, **attrs):
+        super().__init__(parent, _w.Meta, sbreak=True, empty=True, **attrs)
+        return
+    
+    pass
+    
+class _HeadContent_():
+            
     def Script(self, src=None, type= None, 
     	            language=None,
     	            async=False, crossorigin=None, 
     	            defer=None, fetchpriority=None,
     	            integrity=None, nomodule=None,
-    	            nonce=None, referrerpolicy=None):
+    	            nonce=None, referrerpolicy=None):        	            
         	return asScript(self, src=src, 
         		                    type=type,
         		                    language=language,
@@ -742,9 +777,7 @@ class asHead(asTag):
         		                    nonce=nonce, 
         		                    referrerpolicy=referrerpolicy
         		                )
-        		                
-        		              
-    	            
+        		                   	            
     def Style(self, *s, **attrs):
         return asStyle(self, *s, **attrs)
         
@@ -755,15 +788,66 @@ class asHead(asTag):
         return self.Link(rel=_w.Stylesheet, type=Mime.TextCss, href=href)
         
     def Javascript(self, src=None):
-        return self.Script(language="JavaScript", src=src)
+        return self.Script(language=_w.Javascript, src=src)
         
+    def Module(self, src=None):
+        return self.Script(language=_w.Module, src=src)
+    
+    pass
+
+class asHead(asTag, _HeadContent_):
+    
+    def __init__(self, parent):
+        super().__init__(parent, _w.Head, sbreak=True)    
+        self._Title = None
+        self._JQuery =None
+        self._JQueryUi =None
+        
+        self.Meta_Item("viewport", "width=device-width, initial-scale=1")
+
+
+        return
+        
+    def Title(self, *s):
+        if self._Title is None:
+            self._Title= asTitle(self, *s)
+        return self._Title
+        
+    def Comment(self):
+        return asComment(self)
+        
+    def Meta_Charset(self, charset=None):
+        return asMeta(self, charset=charset)
+    
+    def Meta_Item(self, _name=None, _content=None):
+        return asMeta(self, _name=_name, _content=_content)
+    
+    def Meta_HttpEquiv(self, http_equiv=None, content=None):
+        return asMeta(self, http_equiv=http_equiv, content=content)
+    
+          
+    def JQuery(self):
+        if self._JQuery is None:
+            self._JQuery = asJQuery(self)
+        return self._JQuery
+        
+        
+    def JQueryUi(self):
+        if self._JQueryUi is None:
+            self.JQuery()
+            self._JQueryUi = asJQueryUi(self)
+        return self._JQueryUi
     pass
     
     
-class asButton(asTag, _Autofocus):
+class _Content_():
+    
+    pass
+    
+class asButton(asTag):
     
     def __init__(self, parent, **attrs):
-        asTag.__init__(self, parent, _w.Button, sbreak=True, **attrs)       
+        super().__init__(parent, _w.Button, sbreak=True, **attrs)       
         return
         
     def _Type(self, s=None):
@@ -779,29 +863,190 @@ class asButton(asTag, _Autofocus):
     
     pass
 
-class asImgage(asTag):
+class asImage(asTag):
     
     def __init__(self, parent, src,
     	                 width=None,
     	                 heigth=None,
     	                 **attrs
     	             ):
-        asTag.__init__(self, parent, _w.Img, sbreak=True, **attrs)       
+        super().__init__(parent, _w.Img, sbreak=True, **attrs)       
         return
         
     pass
     
+class asHeading(asTag):
+    
+    def __init__(self, parent, level=1, **attrs):
+        super().__init__(parent, "H"+str(level), sbreak=True, **attrs)
+        return
+    
+    pass
+    
+class asBlock(asTag, _Content_):
+    
+    def __init__(self, parent, **attrs):
+        super().__init__(parent, tag=None, sbreak=True, **attrs)
+        return    
+    
+    pass
+    
+class asParagraph(asTag, _Content_):
+  
+    def __init__(self, parent, **attrs):
+        super().__init__(parent, tag="P", sbreak=True, **attrs)
+        return    
+        
+    pass
+   
+
+
 class asDiv(asTag):
     
     def __init__(self, parent,
     	                   **attrs    	                 
     	             ):
-        asTag.__init__(self, parent, _w.Div, sbreak=True, **attrs)       
+        super().__init__(parent, _w.Div, sbreak=True, **attrs)       
         return
         
     pass
     
-class _Content_():
+class asPanel(asBlock):
+    
+    def __init__(self, parent, title=None, **attrs):
+        super().__init__(parent, **attrs)
+        self._Heading=None
+        self._Contents=None
+        if title is not None:
+            self.Heading(title)
+        return    
+    
+    def Heading(self, title=None):
+        if self._Heading is None:
+            self._Heading=asHeading(self, level=3)
+        if title is not None:
+            self._Heading(title)
+        return self._Heading
+    
+    @property 
+    def Contents(self):
+        if self._Contents is None:
+            p=asDiv(self)            
+            self._Contents=p
+        return self._Contents
+    
+    pass
+    
+  
+class asPanelGroup(asTag):
+    
+    def __init__(self, parent, _id=next_id(), **attrs):
+        super().__init__(parent, _w.Div, _id=_id, **attrs)
+        h=parent.Root.Head()
+        s=h.JQueryUi()       
+        s.InitializeFor("PanelGroup", self)
+        return
+        
+    def Panel(self, title):
+        return asPanel(self, title)
+        
+        
+    def doInitialize(self, out, _indent=0):
+        o={
+        	  "collapsible": True,
+          "heightStyle": "content"
+        	  }
+        o=json.dumps(o)
+        DEBUG.ID(self.ID)
+        self.writeout_part('$( "#'+self.ID+'" ).accordion('+o+');',out, _indent)
+        return
+           
+        
+    pass
+
+class asListItem(asTag):
+    
+    def __init__(self, parent):
+        super().__init__(parent, _w.Li)
+        return
+    
+    pass
+
+class asMenu(asTag):
+    
+    def __init__(self, parent, _id=next_id(), **attrs):
+        super().__init__(parent, tag=_w.Ul, _id=_id, **attrs)
+        h=parent.Root.Head()
+        s=h.JQueryUi()
+        si=s.InitializeFor(_id)
+        
+        return
+        
+    def doInitialize(self, out, _indent=0):       
+        self.writeout_part('$( "#'+self.ID+'" ).menu();',out, _indent)
+        return
+           
+    def MenuItem(self):
+        return asMenuItem()
+        
+    
+    pass
+    
+class asTab():
+    
+    pass
+
+class asTabGroup():
+    
+    def __init__(self, parent, _id=next_id(), **attrs):
+        super().__init__(parent, _w.Div, _id=_id, **attrs)
+        h=parent.Root.Head()
+        s=h.JQueryUi()       
+        s.InitializeFor("TabGroup", self)
+        self._Tab=None
+        self._Contents=None
+        return
+    
+    def doInitialize(self, out, _indent=0):
+        o={
+        	  "collapsible": True,
+          "heightStyle": "content"
+        	  }
+        o=json.dumps(o)        
+        self.writeout_part('$( "#'+self.ID+'" ).tabs('+o+');',out, _indent)
+        return
+    
+    pass
+    
+    
+class asButtonGroup():
+    
+    
+    
+    pass
+    
+class asRadioButton():
+    
+    
+    pass
+    
+class asFillbar():
+    
+    pass
+    
+class asCheckbox():
+    
+    pass
+    
+class asTable():
+    
+    pass
+    
+    
+class asSelectbox():
+    pass
+    
+class _Content_(_Content_):
     
     def Button(self, type=None, 
     	        ):
@@ -821,12 +1066,22 @@ class _Content_():
     def Div(self, **attrs):
         return asDiv(self, **attrs)
         
+    def PanelGroup(self, **attrs):       
+        return asPanelGroup(self, **attrs)
+        
+        
+    def Heading(self, level=1, **attrs):
+        return asheading(self, level=level, **attrs)
+        
+    def Paragraph(self, **ttrs):
+        return asParagraph(self, **attrs)
+        
     pass
     
 class asBody(asTag, _Content_):
     
     def __init__(self, parent):
-        asTag.__init__(self, parent, _w.Body, sbreak=True)       
+        super().__init__(parent, _w.Body, sbreak=True)       
         return
         
          
@@ -838,8 +1093,10 @@ class Html(asTag):
     
     
     def __init__(self, lang="en"):
-        asTag.__init__(self, None, _w.Html, sbreak=True)   
+        super().__init__(None, _w.Html, sbreak=True)   
         self(lang=lang)    
+        self._Head = None
+        self._Body = None
         return
     
     def prefix(self, out):
@@ -847,10 +1104,14 @@ class Html(asTag):
         return
             
     def Head(self):
-        return asHead(self)
+        if self._Head is None:
+            self._Head=asHead(self)
+        return self._Head
         
     def Body(self):
-        return asBody(self)
+        if self._Body is None:
+            self._Body = asBody(self)
+        return self._Body
     
     pass
 
@@ -858,26 +1119,48 @@ class Html(asTag):
 
 if __name__ == "__main__":
     
-    css = File.Input.Load(("Styles/","Node.css"), pwd=__file__)
+      
+    from Node.EmulateWsgi import EmulateWsgi 
     
+    css = File.Input.Load((_w.Styles,"Node.css"), pwd=__file__)
+    
+    h=None
     with Html() as pg:
         h=pg
-        pg._Id("23")
+        pg.ID="23"
         with pg.Head() as hd:
             hd.Comment()
             hd.Meta_Charset(_w.UTF_8)
-            hd.Meta_HttpEquiv(http_equiv=_w.Description, content="teste de pagina")
+            hd.Meta_HttpEquiv(_w.Description, "teste de pagina")
             hd.Title("xxx")
-            hd.Style(css)
-            hd.Stylesheet("Styles/Node.css")
+            #hd.Style(css)
+            hd.Stylesheet("/Styles/Node.css")
         with pg.Body() as bd:
             bd("xxxxxxxx")
             bd.Div(_class="s")
-            pass
+            p=bd.PanelGroup()
+            p1=p.Panel("panel 1")
+            p1.Contents("asdfvcdth jjuhbyg")
+            p2=p.Panel("panel 2")
+            p2.Contents("455454556")
+            p3=p.Panel("panel 3")
+            p3.Contents("hjhyujb")
 
-   # h.writeout(sys.stdout)
-    
+
+
+
     print(str(h))
+    
+    def handler(env, begin_response):
+        global h
+        r = str(h).encode()
+        hh=(("content-type", "text/html"),) 
+        begin_response("200 ok", hh)
+        
+        return [r]
+    
+    
+    EmulateWsgi.Start(name="Html", handler=handler)
 
 
 
