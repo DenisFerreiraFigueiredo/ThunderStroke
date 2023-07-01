@@ -1,0 +1,22 @@
+#
+# Glowtube - Proxy
+#
+
+ARG ROLE="Glowtube"
+
+FROM node
+
+RUN pip install fann fann2 libfann
+RUN pip install thorch torchvision torchaudio
+RUN pip install tensorflow tensorflow-ops tensorflow-image
+
+#USER thunder
+
+WORKDIR /TStroke/${ROLE}
+
+COPY * .
+
+#ENTRYPOINT ["/usr/bin/python3", "-m", "${ROLE}"]
+#CMD ["Start"]
+
+###
